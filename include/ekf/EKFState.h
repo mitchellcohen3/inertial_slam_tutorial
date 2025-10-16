@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ImuEKFState.h"
-#include "ExtendedPoseEKFState.h"
-#include "Type.h"
+#include "types/ImuEKFState.h"
+#include "types/ExtendedPoseEKFState.h"
+#include "types/Type.h"
 
 /**
- * @brief the main state of our filter.
+ * @brief The main state of the filter.
  */
 class EKFState {
 public:

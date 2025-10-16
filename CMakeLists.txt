@@ -26,8 +26,9 @@ include_directories(
 
 list(
     APPEND lib_sources
-    src/EKFState.cpp
-    src/EKFStateHelper.cpp
+    src/ekf/EKFState.cpp
+    src/ekf/EKFStateHelper.cpp
+    src/sim/BsplineSE3.cpp
 )
 
 # Declare the static library

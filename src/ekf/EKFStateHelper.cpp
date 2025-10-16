@@ -19,8 +19,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "EKFStateHelper.h"
-#include "EKFState.h"
+#include "ekf/EKFStateHelper.h"
+#include "ekf/EKFState.h"
 
 // #include "utils/print.h"
 // #include "utils/colors.h"

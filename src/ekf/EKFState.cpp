@@ -1,4 +1,4 @@
-#include "EKFState.h"
+#include "ekf/EKFState.h"
 
 EKFState::EKFState() {
   // Append the imu to the state and covariance
