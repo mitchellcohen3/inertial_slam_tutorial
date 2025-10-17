@@ -29,7 +29,6 @@ list(
     src/ekf/EKFState.cpp
     src/ekf/EKFStateHelper.cpp
     src/sim/BsplineSE3.cpp
-    src/utils/FileAccess.cpp
     src/sim/Simulator.cpp
 
     src/lieutils/SO3.cpp
@@ -37,8 +36,10 @@ list(
     src/lieutils/SE23.cpp
 
     src/estimator/EKFSlamEstimator.cpp
-
     src/estimator/ImuPropagator.cpp
+
+    src/utils/Utility.cpp
+    src/utils/FileAccess.cpp
 )
 
 # Declare the static library

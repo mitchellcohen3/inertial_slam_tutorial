@@ -53,9 +53,6 @@ public:
   // to generate the same measurements, but with different noise realizations.
   int sim_seed_measurements = 0;
 
-  // Lie Direction
-//   LieDirection direction = LieDirection::left;
-
   //// How much we should perturb the initial state
   double sigma_init_att = 0.1;
   double sigma_init_vel = 0.1;
@@ -64,8 +61,9 @@ public:
 
   double gravity_mag = 9.81; // [m/s^2]
 
+
   double max_sensing_range_slam = 20.0; // [m]
-  int num_slam_features = 100;  // Number of SLAM features to generate
+  int num_slam_features = 5;  // Number of SLAM features to generate
 
   double t_end = 200.0; // [s] Simulation end time
 };

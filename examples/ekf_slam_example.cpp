@@ -6,6 +6,8 @@
 #include "sim/SimConfig.h"
 #include "sim/Simulator.h"
 
+#include "types/ImuEKFState.h"
+
 #include "lieutils/LieDirection.h"
 #include "utils/FileAccess.h"
 #include "utils/SensorData.h"
@@ -84,6 +86,23 @@ int main(int argc, const char **argv) {
   double dt = 1.0 / config.sim_freq_imu;
   double next_imu_time = sim->currentTimestamp() + dt;
   double end_time = sim->currentTimestamp() + config.t_end;
+
+  Eigen::Matrix<double, 15, 15> init_cov =
+      Eigen::Matrix<double, 15, 15>::Identity() * 1e-7;
+  IMUState init_imu_state;
+  sim->getState(next_imu_time, init_imu_state);
+  Eigen::Matrix<double, 5, 5> nav_state =
+      Eigen::Matrix<double, 5, 5>::Identity();
+  nav_state.block<3, 3>(0, 0) = init_imu_state.attitude;
+  nav_state.block<3, 1>(0, 3) = init_imu_state.velocity;
+  nav_state.block<3, 1>(0, 4) = init_imu_state.position;
+  estimator->initializeIMUState(init_imu_state.timestamp, nav_state,
+                                init_imu_state.gyro_bias,
+                                init_imu_state.accel_bias, init_cov);
+  LOG(INFO) << "Initialized EKF-SLAM estimator.";
+
+  double buffer_timefeat = -1;
+  std::vector<RelativeFeatureMessage> buffer_rel_feat;
   while (sim->ok()) {
     if (sim->currentTimestamp() > end_time) {
       LOG(INFO) << "Reached end of simulation time.";
@@ -93,8 +112,7 @@ int main(int argc, const char **argv) {
     // Get the IMU measurement at the next timestamp
     ImuMessage imu_meas;
     if (sim->getNextImu(imu_meas.timestamp, imu_meas.gyro, imu_meas.accel)) {
-      // LOG(INFO) << "Received IMU measurement at time: " <<
-      // imu_meas.timestamp; estimator->inputIMU(imu_meas);
+      estimator->inputIMU(imu_meas);
     } else {
       LOG(ERROR) << "Failed to get IMU measurement at time: " << next_imu_time;
     }
@@ -112,20 +130,50 @@ int main(int argc, const char **argv) {
         msg.meas = feat.second;
         msg.covariance =
             Eigen::Matrix3d::Identity() * 0.01; // Example covariance
+        msg.covariance = Eigen::Matrix3d::Identity() *
+                         config.sigma_feature_meas_3d *
+                         config.sigma_feature_meas_3d;
         relative_feat_meas.push_back(msg);
       }
 
-      LOG(INFO) << "Received " << relative_feat_meas.size()
-                << " relative feature measurements at time: " << time_feat;
-      // Get the groundtruth state
+      if (buffer_timefeat != -1) {
+        estimator->inputRelativeFeatureMeasurements(buffer_rel_feat,
+                                                    buffer_timefeat);
+      }
+
+      buffer_timefeat = time_feat;
+      buffer_rel_feat = relative_feat_meas;
+
+      double estimator_timestamp = estimator->getEstimateTime();
+
+      // Log the groundtruth state, estimated state, and covariance
       IMUState gt_state;
-      if (sim->getState(imu_meas.timestamp, gt_state)) {
-        LOG(INFO) << "Received groundtruth state at time: " << time_feat;
+      if (sim->getState(estimator_timestamp, gt_state)) {
         Eigen::Matrix<double, 17, 1> gt_state_vec = toAslFormat(
             gt_state.attitude, gt_state.velocity, gt_state.position,
             gt_state.gyro_bias, gt_state.accel_bias, gt_state.timestamp);
         writeDataToFile(state_gt_path, gt_state_vec, true);
       }
+
+      // Retrieve the estimated state
+      std::shared_ptr<ImuEKFState> est_imu_state =
+          estimator->getLatestIMUState();
+      Eigen::Matrix<double, 17, 1> est_state_vec =
+          toAslFormat(est_imu_state->attitude(), est_imu_state->velocity(),
+                      est_imu_state->position(), est_imu_state->gyroBias(),
+                      est_imu_state->accelBias(), estimator_timestamp);
+      writeDataToFile(state_est_path, est_state_vec, true);
+
+      Eigen::Matrix<double, 15, 15> est_cov =
+          estimator->getLatestIMUCovariance();
+
+      // Write the covariance as a flattened vector
+      Eigen::Map<const Eigen::VectorXd> est_cov_vec(est_cov.data(),
+                                                    est_cov.size());
+      Eigen::VectorXd cov_with_stamp(est_cov_vec.size() + 1);
+      cov_with_stamp(0) = estimator_timestamp;
+      cov_with_stamp.tail(est_cov_vec.size()) = est_cov_vec;
+      writeDataToFile(cov_est_path, cov_with_stamp, true);
     }
   }
 

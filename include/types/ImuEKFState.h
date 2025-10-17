@@ -84,6 +84,16 @@ public:
     set_value(value_vec);
   }
 
+  Eigen::Matrix3d attitude() const {
+    return pose_->attitude();
+  }
+  Eigen::Vector3d position() const {
+    return pose_->position();
+  }
+  Eigen::Vector3d velocity() const {
+    return pose_->velocity();
+  }
+
   Eigen::Matrix<double, 5, 5> extendedPose() const  {
     return pose_->toMatrix();
   }

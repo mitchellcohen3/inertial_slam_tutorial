@@ -1,20 +1,25 @@
 #pragma once
 
+#include "estimator/ImuKinematicsConfig.h"
 #include "utils/SensorData.h"
+#include "lieutils/SO3.h"
+
 #include <Eigen/Dense>
 #include <memory>
+
+class ImuPropagator;
+class ImuEKFState;
 
 class EstimatorConfig {
 public:
   bool use_fej = false;
+  LieDirection lie_direction = LieDirection::left;
+
+  KinematicsConfig kinematics_config;
 
   EstimatorConfig() {}
 };
 
-// #include "feature/3DSlamFeatures.h"
-// #include "types/ImuType.h"
-
-// #include "slam_estimator/ekf_state/EKFState.h"
 class EKFState;
 
 /**
@@ -31,15 +36,16 @@ public:
   void inputRelativeFeatureMeasurements(
       std::vector<RelativeFeatureMessage> &relative_feat_meas, double stamp);
 
-  void initializeIMUState(
-      const Eigen::Matrix<double, 5, 5> &nav_state,
-      const Eigen::Vector3d &gyro_bias, const Eigen::Vector3d &accel_bias,
-      const Eigen::Matrix<double, 15, 15> &init_imu_cov);
+  void initializeIMUState(double stamp,
+                          const Eigen::Matrix<double, 5, 5> &nav_state,
+                          const Eigen::Vector3d &gyro_bias,
+                          const Eigen::Vector3d &accel_bias,
+                          const Eigen::Matrix<double, 15, 15> &init_imu_cov);
 
-  // IMUType getLatestIMUState() const override;
-  // std::shared_ptr<EKF
+  std::shared_ptr<ImuEKFState> getLatestIMUState() const;
   Eigen::Matrix<double, 15, 15> getLatestIMUCovariance() const;
   std::vector<Eigen::Vector3d> getEstimatedMap() const;
+  double getEstimateTime() const;
 
 protected:
   void propagateIMUStateToStamp(double stamp);
@@ -55,7 +61,7 @@ protected:
   // Our EKF state and covariance, to be manipulated
   // through the EKFStateHelper class
   std::shared_ptr<EKFState> state_;
-  // std::shared_ptr<ImuPropagator> imu_propagator_;
+  std::shared_ptr<ImuPropagator> imu_propagator_;
 
   /**
    * @brief Stores the first estimates of the landmarks for FEJ
@@ -71,3 +77,9 @@ protected:
   double last_imu_time_ = -1;
   size_t frame_id = 0;
 };
+
+void computeMeasurementModelJacobians(const Eigen::Matrix3d &C_ab,
+                      const Eigen::Vector3d &r_zw_a,
+                      const Eigen::Vector3d &r_pw_a, Eigen::Matrix3d &att_jac,
+                      Eigen::Matrix3d &pos_jac, Eigen::Matrix3d &feat_jac,
+                      LieDirection direction);

@@ -76,6 +76,20 @@ public:
 
   LieDirection getDirection() const { return direction; }
 
+  Eigen::Matrix3d attitude() const {
+    Eigen::Matrix<double, 15, 1> state = value();
+    return SO3::unflatten(state.head<9>());
+  }
+
+  Eigen::Vector3d velocity() const {
+    Eigen::Matrix<double, 15, 1> state = value();
+    return state.block<3, 1>(9, 0);
+  }
+
+  Eigen::Vector3d position() const {
+    Eigen::Matrix<double, 15, 1> state = value();
+    return state.block<3, 1>(12, 0);
+  }
 protected:
   LieDirection direction = LieDirection::left;
 };

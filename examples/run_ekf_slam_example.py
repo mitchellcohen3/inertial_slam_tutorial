@@ -25,25 +25,6 @@ plt.rc("grid", linestyle="--")
 plt.rc("text", usetex=True)
 colors = sns.color_palette("deep")
 
-
-# class IMUState:
-#     def __init__(
-#         self,
-#         stamp: float,
-#         attitude: np.ndarray,
-#         velocity: np.ndarray,
-#         position: np.ndarray,
-#         gyro_bias: np.ndarray,
-#         accel_bias: np.ndarray,
-#     ):
-#         self.timestamp = stamp
-#         self.attitude = attitude
-#         self.velocity = velocity
-#         self.position = position
-#         self.gyro_bias = gyro_bias
-#         self.accel_bias = accel_bias
-
-
 def load_imu_states_from_asl(
     file_path: str,
 ) -> typing.List[IMUState]:
@@ -72,11 +53,18 @@ def load_imu_states_from_asl(
 
 def evaluate_ekf_slam_example(gt_file: str, est_file: str, cov_file: str):
     gt_states = load_imu_states_from_asl(gt_file)
+    est_states = load_imu_states_from_asl(est_file)
+
     logging.info(f"Loaded {len(gt_states)} ground truth states from {gt_file}")
+    logging.info(f"Loaded {len(est_states)} estimated states from {est_file}")
 
     # Plot the groundtruth states
     fig, ax = plot_poses(gt_states, label="groundtruth", step=None)
-    ax.set_title("EKF SLAM Example - Groundtruth Trajectory")
+    plot_poses(est_states, label="estimated", step=None, ax=ax)
+    ax.set_xlabel("x (m)")
+    ax.set_ylabel("y (m)")
+    ax.set_zlabel("z (m)")
+    ax.set_title("EKF SLAM State Estimation")
 
 
 

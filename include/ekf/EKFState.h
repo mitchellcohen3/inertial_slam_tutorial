@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include "types/ExtendedPoseEKFState.h"
 #include "types/ImuEKFState.h"
@@ -15,7 +16,7 @@ public:
 
   int size() const { return _Cov.rows(); }
 
-  double _timestamp = -1;
+  double timestamp_ = -1;
 
   std::shared_ptr<ImuEKFState> imu_state_;
 

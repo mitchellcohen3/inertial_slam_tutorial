@@ -1,11 +1,21 @@
 #pragma once
-#include <glog/logging.h>
 
+#include <glog/logging.h>
 #include <Eigen/Dense>
 
 class ImuNoises {
 public:
-  ImuNoises() {}
+  ImuNoises() {
+    Q_ct = Eigen::Matrix<double, 12, 12>::Identity() * 1e-7;
+    Q_ct.block<3, 3>(0, 0) =
+        Eigen::Matrix3d::Identity() * sigma_gyro * sigma_gyro;
+    Q_ct.block<3, 3>(3, 3) =
+        Eigen::Matrix3d::Identity() * sigma_accel * sigma_accel;
+    Q_ct.block<3, 3>(6, 6) =
+        Eigen::Matrix3d::Identity() * sigma_gyro_bias * sigma_gyro_bias;
+    Q_ct.block<3, 3>(9, 9) =
+        Eigen::Matrix3d::Identity() * sigma_accel_bias * sigma_accel_bias;
+  }
 
   // Gyroscope whiten noise
   double sigma_gyro = 0.01;
@@ -42,7 +52,9 @@ public:
 
 class KinematicsConfig {
 public:
-  KinematicsConfig() = default;
+  KinematicsConfig() {
+    gravity = Eigen::Vector3d(0, 0, -gravity_mag);
+  }
 
   // Gravity vector
   Eigen::Vector3d gravity;
