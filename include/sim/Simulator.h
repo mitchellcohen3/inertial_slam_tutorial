@@ -43,7 +43,7 @@ public:
    * [time (sec), q_GtoI, p_IinG, v_IinG, b_gyro, b_accel]
    * @return True if we have a state at the desired time, false otherwise.
    */
-  bool getState(double desired_time, Eigen::Matrix<double, 17, 1> &imustate);
+  bool getState(double desired_time, IMUState &imustate);
 
   /**
    * @brief Gets the next IMU measurement if available
@@ -89,11 +89,6 @@ public:
    * @brief Returns the simulation configuration parameters
    */
   SimConfig getSimConfig() const { return params; }
-
-  /**
-   * @brief Gets the simulated IMU state from the spline at a given timestamp.
-   */
-  bool getImuState(IMUState &imu_state, double timestamp);
 
 protected:
   /**

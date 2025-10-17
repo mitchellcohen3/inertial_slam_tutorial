@@ -35,6 +35,10 @@ list(
     src/lieutils/SO3.cpp
     src/lieutils/SE3.cpp
     src/lieutils/SE23.cpp
+
+    src/estimator/EKFSlamEstimator.cpp
+
+    src/estimator/ImuPropagator.cpp
 )
 
 # Declare the static library

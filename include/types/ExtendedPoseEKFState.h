@@ -7,7 +7,6 @@
 
 #include "Type.h"
 
-namespace slam_states {
 class ExtendedPoseEKFState : public ov_type::Type {
 public:
   ExtendedPoseEKFState(LieDirection direction = LieDirection::left)
@@ -33,7 +32,7 @@ public:
       return;
     }
 
-    Eigen::Matrix<double, 5, 5> T = getMatrix();
+    Eigen::Matrix<double, 5, 5> T = toMatrix();
     Eigen::Matrix<double, 5, 5> T_new;
 
     if (direction == LieDirection::left) {
@@ -62,7 +61,7 @@ public:
     return clone;
   }
 
-  Eigen::Matrix<double, 5, 5> getMatrix() const {
+  Eigen::Matrix<double, 5, 5> toMatrix() const {
     Eigen::Matrix<double, 15, 1> state = value();
     Eigen::Matrix3d C_ab = SO3::unflatten(state.head<9>());
     Eigen::Vector3d velocity = state.block<3, 1>(9, 0);
@@ -80,4 +79,3 @@ public:
 protected:
   LieDirection direction = LieDirection::left;
 };
-} // namespace slam_states

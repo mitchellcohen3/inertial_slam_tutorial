@@ -1,16 +1,11 @@
-#include "ImuPropagator.h"
+#include "estimator/ImuPropagator.h"
+
 #include "lieutils/SE23.h"
 #include "lieutils/SO3.h"
 
-#include "utils/Utils.h"
-#include "utils/colors.h"
-#include "utils/utility.h"
-
-#include "imu/IMUHelper.h"
+#include "types/ImuEKFState.h"
 
 #include <glog/logging.h>
-#include <iostream>
-#include <string.h>
 
 void discretizeSystem(const Eigen::MatrixXd &A_ct, const Eigen::MatrixXd &L_ct,
                       const Eigen::MatrixXd &Q_ct, double dt,
@@ -37,23 +32,50 @@ void discretizeSystem(const Eigen::MatrixXd &A_ct, const Eigen::MatrixXd &L_ct,
   Q_d = 0.5 * (Q_d + Q_d.transpose());
 }
 
-void getUnbiasedImu(const ImuMessage &input,
-                    const std::shared_ptr<IMUType> &state,
-                    Eigen::Vector3d &unbiased_gyro,
-                    Eigen::Vector3d &unbiased_accel) {
-  // Extract the
-  Eigen::Vector3d gyro_meas = input.gyro;
-  Eigen::Vector3d accel_meas = input.accel;
+Eigen::Matrix<double, 5, 5> createGMatrix(const Eigen::Vector3d &gravity,
+                                          double dt) {
+  Eigen::Matrix<double, 5, 5> G = Eigen::Matrix<double, 5, 5>::Identity();
+  G.block<3, 1>(0, 3) = dt * gravity;
+  G.block<3, 1>(0, 4) = -0.5 * dt * dt * gravity;
+  G(3, 4) = -dt;
+  return G;
+}
 
-  // Get the unbiased IMU measurement
-  unbiased_gyro = gyro_meas - state->gyroBias();
-  unbiased_accel = accel_meas - state->accelBias();
+Eigen::Matrix3d createNMatrix(const Eigen::Vector3d &phi_vec) {
+  double small_angle_tol = 1e-7;
+  double phi_norm = phi_vec.norm();
+  if (phi_norm < small_angle_tol) {
+    return Eigen::Matrix3d::Identity();
+  } else {
+    Eigen::Vector3d a = phi_vec / phi_norm;
+    Eigen::Matrix3d a_cross = SO3::cross(a);
+    double c = (1.0 - cos(phi_norm)) / (phi_norm * phi_norm);
+    double s = (phi_norm - sin(phi_norm)) / (phi_norm * phi_norm);
+    Eigen::Matrix3d N = 2 * c * Eigen::Matrix3d::Identity() +
+                        (1 - 2 * c) * (a * a.transpose()) + (2 * s * a_cross);
+    return N;
+  }
+}
+
+Eigen::Matrix<double, 5, 5> createUMatrix(const Eigen::Vector3d &omega,
+                                          const Eigen::Vector3d &accel,
+                                          double dt) {
+  Eigen::Matrix<double, 5, 5> U_mat = Eigen::Matrix<double, 5, 5>::Identity();
+  Eigen::Vector3d phi = omega * dt;
+  Eigen::Matrix3d O_mat = SO3::expMap(phi);
+  Eigen::Matrix3d J_left = SO3::leftJacobian(phi);
+  Eigen::Matrix3d V_mat = createNMatrix(phi);
+  U_mat.block<3, 3>(0, 0) = O_mat;
+  U_mat.block<3, 1>(0, 3) = dt * J_left * accel;
+  U_mat.block<3, 1>(0, 4) = (0.5 * dt * dt) * V_mat * accel;
+  U_mat(3, 4) = dt;
+  return U_mat;
 }
 
 /*
  * Propagates the state forward one timestamp.
  */
-void ImuPropagator::predict(std::shared_ptr<IMUType> state,
+void ImuPropagator::predict(std::shared_ptr<ImuEKFState> state,
                             const Eigen::Vector3d &gyro,
                             const Eigen::Vector3d &accel, double dt) {
   Eigen::Vector3d unbiased_gyro = gyro - state->gyroBias();
@@ -63,13 +85,12 @@ void ImuPropagator::predict(std::shared_ptr<IMUType> state,
   Eigen::Matrix<double, 5, 5> U =
       createUMatrix(unbiased_gyro, unbiased_accel, dt);
 
-  Eigen::Matrix<double, 5, 5> prev_extended_pose = state->navState();
+  Eigen::Matrix<double, 5, 5> prev_extended_pose = state->extendedPose();
   Eigen::Matrix<double, 5, 5> next_extended_pose = G * prev_extended_pose * U;
 
-  double new_stamp = state->stamp() + dt;
-  state->setStamp(new_stamp);
-  // Update the value for the extended pose
-  state->setNavState(next_extended_pose);
+  // Update the state
+  state->setFromPoseAndBiases(
+      next_extended_pose, state->gyroBias(), state->accelBias());
 }
 
 std::vector<ImuMessage>
@@ -238,7 +259,7 @@ ImuMessage ImuPropagator::interpolateIMUData(const ImuMessage &imu_data1,
   return interpolated_imu;
 }
 
-void ImuPropagator::predictWithJacobians(std::shared_ptr<IMUType> state,
+void ImuPropagator::predictWithJacobians(std::shared_ptr<ImuEKFState> state,
                                          const Eigen::Vector3d &gyro,
                                          const Eigen::Vector3d &accel,
                                          double dt,
@@ -247,10 +268,11 @@ void ImuPropagator::predictWithJacobians(std::shared_ptr<IMUType> state,
   // Compute the Jacobians
   Eigen::Matrix<double, 15, 15> A_ct = Eigen::Matrix<double, 15, 15>::Zero();
   Eigen::Matrix<double, 15, 12> L_ct = Eigen::Matrix<double, 15, 12>::Zero();
-
-  Eigen::Matrix3d C = state->attitude();
-  Eigen::Vector3d v = state->velocity();
-  Eigen::Vector3d r = state->position();
+  
+  Eigen::Matrix<double, 5, 5> T_ab = state->extendedPose();
+  Eigen::Matrix<double, 3, 3> C = T_ab.block<3, 3>(0, 0);
+  Eigen::Vector3d v = T_ab.block<3, 1>(0, 3);
+  Eigen::Vector3d r = T_ab.block<3, 1>(0, 4);
   Eigen::Vector3d g_a = config.gravity;
 
   if (state->direction() == LieDirection::left) {
@@ -281,48 +303,4 @@ void ImuPropagator::predictWithJacobians(std::shared_ptr<IMUType> state,
 
   // Propagate the state forward
   predict(state, gyro, accel, dt);
-}
-
-void ImuPropagator::propagate(std::shared_ptr<IMUType> state,
-                              double timestamp) {
-  // Crash if the timestmap if the same as the state
-  if (isDoubleWithinTolerance(state->stamp(), timestamp, 1e-12)) {
-    LOG(ERROR) << "ImuPropagator::propagateImuState(): The timestamp of the "
-                  "state is the same as the timestamp to propagate to!";
-    std::exit(EXIT_FAILURE);
-  }
-
-  // Crash if we are trying to propagate backwards
-  if (state->stamp() > timestamp) {
-    LOG(ERROR) << "ImuPropagator::propagateImuState(): The timestamp of the "
-                  "state is greater than the timestamp to propagate to!";
-    std::exit(EXIT_FAILURE);
-  }
-
-  // Construct a vector of IMU messaages to use
-  double time0 = state->stamp();
-  double time1 = timestamp;
-  std::vector<ImuMessage> prop_data;
-  prop_data = selectIMUData(imu_data, time0, time1, true);
-
-  // Propagate IMU data
-  if (prop_data.size() > 1) {
-    for (size_t i = 0; i < prop_data.size() - 1; i++) {
-      double dt = prop_data.at(i + 1).timestamp - prop_data.at(i).timestamp;
-
-      Eigen::Vector3d gyro_avg, acc_avg;
-      if (config.average_meas) {
-        gyro_avg = 0.5 * (prop_data.at(i).gyro + prop_data.at(i + 1).gyro);
-        acc_avg = 0.5 * (prop_data.at(i).accel + prop_data.at(i + 1).accel);
-      } else {
-        gyro_avg = prop_data.at(i).gyro;
-        acc_avg = prop_data.at(i).accel;
-      }
-
-      // Propagate state
-      predict(state, gyro_avg, acc_avg, dt);
-      // Propagate IMU increment
-      imu_increment->propagate(dt, gyro_avg, acc_avg);
-    }
-  }
 }

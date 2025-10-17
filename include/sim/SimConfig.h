@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "lieutils/LieDirection.h"
-#include "propagator/ImuKinematicsConfig.h"
+#include "estimator/ImuKinematicsConfig.h"
 
 class SimConfig {
 
