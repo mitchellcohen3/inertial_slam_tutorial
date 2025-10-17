@@ -43,3 +43,4 @@
 *build/
 .venv/
 examples/CMakeFiles/
+*.vscode/

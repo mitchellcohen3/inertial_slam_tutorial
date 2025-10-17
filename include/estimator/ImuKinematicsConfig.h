@@ -3,6 +3,8 @@
 #include <glog/logging.h>
 #include <Eigen/Dense>
 
+#include <yaml-cpp/yaml.h>
+
 class ImuNoises {
 public:
   ImuNoises() {
@@ -26,9 +28,16 @@ public:
   // Accelerometer random walk
   double sigma_accel_bias = 3.00e-3;
 
+  // The continuous-time IMU noise covariance
   Eigen::Matrix<double, 12, 12> Q_ct;
 
-  bool load () {
+  bool load (const std::string &config_file) {
+    YAML::Node config = YAML::LoadFile(config_file);
+    sigma_gyro = config["sigma_gyro"].as<double>();
+    sigma_accel = config["sigma_accel"].as<double>();
+    sigma_gyro_bias = config["sigma_gyro_bias"].as<double>();
+    sigma_accel_bias = config["sigma_accel_bias"].as<double>();
+
     Q_ct = Eigen::Matrix<double, 12, 12>::Identity() * 1e-7;
     Q_ct.block<3, 3>(0, 0) =
         Eigen::Matrix3d::Identity() * sigma_gyro * sigma_gyro;
@@ -62,19 +71,14 @@ public:
   // Gravity magnitude
   double gravity_mag = 9.81;
 
-  // Jacobian method
-  std::string jacobian_method = "continuous";
-  // Discretization method
-  std::string discritization_method = "euler";
-
-  // Whether or not to propagate with the average measurements
-  bool average_meas = true;
-
   // IMU noise parameters
   ImuNoises imu_noises;
 
-  bool load() {
-    LOG(INFO) << "Loading Kinematics Config with default parameters.";
+  bool load(const std::string &config_file) {
+    YAML::Node config = YAML::LoadFile(config_file);
+    gravity_mag = config["gravity_mag"].as<double>();
+    imu_noises.load(config_file);
+
     gravity = Eigen::Vector3d(0, 0, -gravity_mag);
     return true;
   }
@@ -82,9 +86,6 @@ public:
   void print() const {
     LOG(INFO) << "Kinematics Parameters: ";
     LOG(INFO) << "  - gravity: " << gravity.transpose();
-    LOG(INFO) << "  - jacobian_method: " << jacobian_method;
-    LOG(INFO) << "  - discritization_method: " << discritization_method;
-    LOG(INFO) << "  - average_meas: " << average_meas;
-    // imu_noises.print();
+    imu_noises.print();
   }
 };

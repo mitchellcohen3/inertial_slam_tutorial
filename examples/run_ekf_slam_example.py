@@ -31,6 +31,8 @@ def run_ekf_slam_example(executable_path: str, config_dict: typing.Dict):
         cmd = [executable_path]
 
         args = [
+            "--config_path",
+            config_dict["sim_config_path"],
             "--trajectory_path",
             config_dict["traj_path"],
             "--state_gt_path",
@@ -60,8 +62,10 @@ if __name__ == "__main__":
     gt_file = os.path.join(save_dir, "state_gt.txt")
     feature_map_file = os.path.join(save_dir, "feature_map.txt")
     traj_path = os.path.join(cur_dir, "trajectories/euroc_mav/MH_01_easy.txt")
+    sim_config_path = os.path.join(cur_dir, "../config/slam_example_config.yaml")
 
     config_dict = {
+        "sim_config_path": sim_config_path,
         "traj_path": traj_path,
         "state_gt_path": gt_file,
         "state_est_path": est_file,

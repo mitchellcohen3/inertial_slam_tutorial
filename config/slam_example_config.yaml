@@ -1,0 +1,36 @@
+# Simulation parameters
+t_end: 200.0
+num_slam_features: 25
+max_sensing_range_slam: 5.0
+
+use_fej: false
+
+noise_active: false
+
+# Sensor Parameters
+sigma_feature_meas_3d: 0.1
+
+sigma_gyro: 1.69e-4
+sigma_accel: 2.00e-3
+sigma_gyro_bias: 1.93e-5
+sigma_accel_bias: 3.00e-3
+
+gravity_mag: 9.81
+
+sim_freq_meas: 10
+sim_freq_imu: 400
+
+# Simulation seed parameters
+sim_seed_state_init: 0
+sim_seed_measurements: 0 
+sim_seed_imu_perturbation: 0
+
+sim_do_imu_perturbation: false
+
+sim_init_gyro_bias: [0.01, 0.02, 0.03]
+sim_init_accel_bias: [-0.03, -0.02, 0.02]
+
+sigma_init_att: 0.1
+sigma_init_vel: 0.1
+sigma_init_bg: 0.01
+sigma_init_ba: 0.001

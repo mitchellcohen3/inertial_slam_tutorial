@@ -15,12 +15,18 @@
 
 namespace po = boost::program_options;
 
+void waitForEnter() {
+    std::cout << "Press Enter to continue...";
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+}
+
 po::variables_map handle_args(int argc, const char *argv[]) {
   po::options_description options("Allowed options");
 
   // clang-format off
   options.add_options()
   ("help", "produce help message")
+  ("config_path", po::value<std::string>()->required(), "Path to the simulator configuration file")
   ("trajectory_path", po::value<std::string>()->required(), "Path to the IMU trajectory file")
   ("state_gt_path", po::value<std::string>()->default_value("state_gt.txt"), "Path to save groundtruth states")
   ("state_est_path", po::value<std::string>()->default_value("state_est.txt"), "Path to save estimated states")
@@ -55,7 +61,9 @@ int main(int argc, const char **argv) {
   std::string state_est_path = args["state_est_path"].as<std::string>();
   std::string cov_est_path = args["cov_est_path"].as<std::string>();
   std::string feature_map_path = args["feature_map_path"].as<std::string>();
+  std::string config_path = args["config_path"].as<std::string>();
   LOG(INFO) << "Using trajectory path: " << traj_path;
+  LOG(INFO) << "Using simulator config path: " << config_path;
 
   // Create output files
   createNewFile(state_gt_path);
@@ -71,10 +79,13 @@ int main(int argc, const char **argv) {
 
   // Initialize the simulation
   SimConfig config;
+  config.load(config_path);
+  config.print();
+
   std::shared_ptr<Simulator> sim =
       std::make_shared<Simulator>(config, traj_path);
   LOG(INFO) << "Simulation initialized.";
-
+  
   // Save the landmarks
   std::vector<Eigen::Vector3d> gt_landmarks = sim->getSlamFeatures();
   for (auto const &lm : gt_landmarks) {
