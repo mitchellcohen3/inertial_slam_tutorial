@@ -21,12 +21,11 @@
 
 #include "sim/BsplineSE3.h"
 
-#include "lie/SE3.h"
-#include "lie/SO3.h"
+#include "lieutils/SE3.h"
+#include "lieutils/SO3.h"
 
 #include <glog/logging.h>
 
-using namespace ceres_nav;
 using namespace ov_core;
 
 void BsplineSE3::feed_trajectory(std::vector<Eigen::VectorXd> traj_points) {

@@ -2,14 +2,11 @@
 
 #include <glog/logging.h>
 
-#include "lie/SE23.h"
-#include "lie/SO3.h"
+#include "lieutils/SE23.h"
+#include "lieutils/SO3.h"
 
 #include "Type.h"
 
-using namespace ceres_nav;
-
-namespace slam_states {
 class ExtendedPoseEKFState : public ov_type::Type {
 public:
   ExtendedPoseEKFState(LieDirection direction = LieDirection::left)
@@ -35,7 +32,7 @@ public:
       return;
     }
 
-    Eigen::Matrix<double, 5, 5> T = getMatrix();
+    Eigen::Matrix<double, 5, 5> T = toMatrix();
     Eigen::Matrix<double, 5, 5> T_new;
 
     if (direction == LieDirection::left) {
@@ -64,7 +61,7 @@ public:
     return clone;
   }
 
-  Eigen::Matrix<double, 5, 5> getMatrix() const {
+  Eigen::Matrix<double, 5, 5> toMatrix() const {
     Eigen::Matrix<double, 15, 1> state = value();
     Eigen::Matrix3d C_ab = SO3::unflatten(state.head<9>());
     Eigen::Vector3d velocity = state.block<3, 1>(9, 0);
@@ -79,7 +76,20 @@ public:
 
   LieDirection getDirection() const { return direction; }
 
+  Eigen::Matrix3d attitude() const {
+    Eigen::Matrix<double, 15, 1> state = value();
+    return SO3::unflatten(state.head<9>());
+  }
+
+  Eigen::Vector3d velocity() const {
+    Eigen::Matrix<double, 15, 1> state = value();
+    return state.block<3, 1>(9, 0);
+  }
+
+  Eigen::Vector3d position() const {
+    Eigen::Matrix<double, 15, 1> state = value();
+    return state.block<3, 1>(12, 0);
+  }
 protected:
   LieDirection direction = LieDirection::left;
 };
-} // namespace slam_states

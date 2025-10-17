@@ -4,9 +4,7 @@
 
 #include "Type.h"
 #include "Vec.h"
-#include "lie/LieDirection.h"
-
-namespace slam_states {
+#include "lieutils/LieDirection.h"
 
 /**
  * @brief Derived class that implements an IMU state to be used with the EKF
@@ -20,8 +18,8 @@ public:
   ImuEKFState(LieDirection direction = LieDirection::left) : ov_type::Type(15) {
     // Create all subvariables
     pose_ = std::make_shared<ExtendedPoseEKFState>(direction);
-    gyro_bias = std::make_shared<ov_type::Vec>(3);
-    accel_bias = std::make_shared<ov_type::Vec>(3);
+    gyro_bias_ = std::make_shared<ov_type::Vec>(3);
+    accel_bias_ = std::make_shared<ov_type::Vec>(3);
 
     // Create initial value
     Eigen::Matrix<double, 21, 1> imu0 = Eigen::Matrix<double, 21, 1>::Zero();
@@ -40,18 +38,18 @@ public:
 
     // Update each subvariable
     pose_->update(delta_xi.segment(0, 9));
-    gyro_bias->update(delta_xi.segment(9, 3));
-    accel_bias->update(delta_xi.segment(12, 3));
+    gyro_bias_->update(delta_xi.segment(9, 3));
+    accel_bias_->update(delta_xi.segment(12, 3));
 
     // Now, set the full state value
     Eigen::Matrix<double, 21, 1> newX;
     newX.head<15>() = pose_->value();
-    newX.segment<3>(15) = gyro_bias->value();
-    newX.segment<3>(18) = accel_bias->value();
+    newX.segment<3>(15) = gyro_bias_->value();
+    newX.segment<3>(18) = accel_bias_->value();
     set_value(newX);
   }
 
-  LieDirection getDirection() const { return pose_->getDirection(); }
+  LieDirection direction() const { return pose_->getDirection(); }
 
   void set_value(const Eigen::MatrixXd &new_value) override {
     if (new_value.rows() != 21) {
@@ -62,8 +60,8 @@ public:
     }
 
     pose_->set_value(new_value.block<15, 1>(0, 0));
-    gyro_bias->set_value(new_value.block<3, 1>(15, 0));
-    accel_bias->set_value(new_value.block<3, 1>(18, 0));
+    gyro_bias_->set_value(new_value.block<3, 1>(15, 0));
+    accel_bias_->set_value(new_value.block<3, 1>(18, 0));
     _value = new_value;
   }
 
@@ -73,10 +71,44 @@ public:
     return clone;
   }
 
+  // Sets the state from given pose and biases
+  void setFromPoseAndBiases(const Eigen::Matrix<double, 5, 5> &nav_state,
+                            const Eigen::Vector3d &gyro_bias,
+                            const Eigen::Vector3d &accel_bias) {
+    Eigen::Matrix<double, 21, 1> value_vec = Eigen::Matrix<double, 21, 1>::Zero();
+    value_vec.head<9>() = SO3::flatten(nav_state.block<3, 3>(0, 0));
+    value_vec.block<3, 1>(9, 0) = nav_state.block<3, 1>(0, 3);
+    value_vec.block<3, 1>(12, 0) = nav_state.block<3, 1>(0, 4);
+    value_vec.block<3, 1>(15, 0) = gyro_bias;
+    value_vec.block<3, 1>(18, 0) = accel_bias;
+    set_value(value_vec);
+  }
+
+  Eigen::Matrix3d attitude() const {
+    return pose_->attitude();
+  }
+  Eigen::Vector3d position() const {
+    return pose_->position();
+  }
+  Eigen::Vector3d velocity() const {
+    return pose_->velocity();
+  }
+
+  Eigen::Matrix<double, 5, 5> extendedPose() const  {
+    return pose_->toMatrix();
+  }
+
+  Eigen::Vector3d gyroBias() const {
+    return gyro_bias_->value();
+  }
+
+  Eigen::Vector3d accelBias() const {
+    return accel_bias_->value();
+  }
+
 protected:
   // Pose subvariable
   std::shared_ptr<ExtendedPoseEKFState> pose_;
-  std::shared_ptr<ov_type::Vec> gyro_bias;
-  std::shared_ptr<ov_type::Vec> accel_bias;
+  std::shared_ptr<ov_type::Vec> gyro_bias_;
+  std::shared_ptr<ov_type::Vec> accel_bias_;
 };
-} // namespace slam_states

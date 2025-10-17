@@ -3,9 +3,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 
-#include "lie/LieDirection.h"
-
-namespace ceres_nav {
+#include "lieutils/LieDirection.h"
 
 class SO3 {
 public:
@@ -29,5 +27,3 @@ public:
                                const Eigen::Matrix3d &X,
                                const LieDirection &direction);
 };
-
-} // namespace ceres_nav

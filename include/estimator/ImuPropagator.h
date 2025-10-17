@@ -1,45 +1,31 @@
 #pragma once
 
-#include "config/VinsConfig.h"
-#include "imu/IMUIncrement.h"
-#include "types/ImuType.h"
-#include "utils/SensorData.h"
-
 #include <Eigen/Dense>
 #include <memory>
 #include <mutex>
 
-void getUnbiasedImu(const ImuMessage &input,
-                    const std::shared_ptr<IMUType> &state,
-                    Eigen::Vector3d &unbiased_gyro,
-                    Eigen::Vector3d &unbiased_accel);
+#include "estimator/ImuKinematicsConfig.h"
+#include "types/ImuEKFState.h"
+#include "utils/SensorData.h"
 
 /**
- * @brief Performs propagation of an IMU state and an RMI, along with their
- * corresponding covariances. Also has tools for selecting which measurements we
- * should propagate with.
+ * @brief Class to propagate the IMU state based on incoming IMU measurements.
  */
 class ImuPropagator {
 public:
-  ImuPropagator(
-      const KinematicsConfig &config_,
-      LieDirection direction = LieDirection::left,
-      ExtendedPoseRepresentation pose_rep = ExtendedPoseRepresentation::SE23)
-      : direction_(direction) {
-    config = config_;
+  ImuPropagator(const KinematicsConfig &config_) : config(config_) {}
 
-    // Set initial IMU increment
-    Eigen::Vector3d bg = Eigen::Vector3d::Zero();
-    Eigen::Vector3d ba = Eigen::Vector3d::Zero();
-    imu_increment = std::make_shared<ceres_nav::IMUIncrement>(
-        config.imu_noises.Q_ct, bg, ba, 0.0, config.gravity, direction,
-        pose_rep);
+  /**
+   * @brief Inputs an IMU measurement into the propagator.
+   */
+  void inputIMU(const ImuMessage &imu_message) {
+    imu_data.push_back(imu_message);
   }
 
   /**
    * @brief Predicts the IMU state forward one timestep.
    */
-  void predict(std::shared_ptr<IMUType> state, const Eigen::Vector3d &gyro,
+  void predict(std::shared_ptr<ImuEKFState> state, const Eigen::Vector3d &gyro,
                const Eigen::Vector3d &accel, double dt);
 
   /**
@@ -48,15 +34,11 @@ public:
    * Also computes the discrete-time Jacobians of the process model with respect
    * to the state and the noise.
    */
-  void predictWithJacobians(std::shared_ptr<IMUType> state,
+  void predictWithJacobians(std::shared_ptr<ImuEKFState> state,
                             const Eigen::Vector3d &gyro,
                             const Eigen::Vector3d &accel, double dt,
                             Eigen::Matrix<double, 15, 15> &Ad,
                             Eigen::Matrix<double, 15, 15> &Qd);
-
-  void inputIMU(const ImuMessage &imu_message) {
-    imu_data.push_back(imu_message);
-  }
 
   /**
    * @brief Get the IMU message between two times.
@@ -79,23 +61,6 @@ public:
   static ImuMessage interpolateIMUData(const ImuMessage &imu_data1,
                                        const ImuMessage &imu_data2,
                                        const double &time);
-
-  /**
-   * @brief Propagate IMU state and RMI to current timestamp using IMU
-   * measurements. Here, we first should call inputIMU() to add the IMU
-   * measurements to the buffer, and then call this function to propagate until
-   * the desired time.
-   */
-  void propagate(std::shared_ptr<IMUType> state, double timestamp);
-
-  void setImuIncrementDirection(const LieDirection &direction) {
-    imu_increment->direction = direction;
-  }
-
-  void resetImuIncrement(const Eigen::Vector3d &bg, const Eigen::Vector3d &ba,
-                         const double &stamp) {
-    imu_increment->reset(stamp, bg, ba);
-  }
 
   void cleanOldIMUData(double oldest_time) {
     if (oldest_time < 0) {
@@ -121,9 +86,6 @@ public:
     return imu_data.size();
   }
 
-  // Our latest RMI
-  std::shared_ptr<ceres_nav::IMUIncrement> imu_increment;
-
 protected:
   // Our configuration which contains the noise properties,
   // gravity, etc.
@@ -139,3 +101,11 @@ protected:
 void discretizeSystem(const Eigen::MatrixXd &A_ct, const Eigen::MatrixXd &L_ct,
                       const Eigen::MatrixXd &Q_ct, double dt,
                       Eigen::MatrixXd &A_d, Eigen::MatrixXd &Q_d);
+
+Eigen::Matrix<double, 5, 5> createGMatrix(const Eigen::Vector3d &gravity,
+                                          double dt);
+Eigen::Matrix<double, 5, 5> createUMatrix(const Eigen::Vector3d &omega,
+                                          const Eigen::Vector3d &accel,
+                                          double dt);
+Eigen::Matrix3d createNMatrix(const Eigen::Vector3d &phi_vec);
+  
