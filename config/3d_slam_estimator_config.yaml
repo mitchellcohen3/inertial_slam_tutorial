@@ -1,0 +1,72 @@
+%YAML:1.0 # need to specify the file type at the top!
+
+# Printing verbosity
+verbosity_level: 0
+
+# Whether or not to use the groundtruth features 
+# for Jacobian evaluation
+eval_feat_at_gt: false
+
+##################################################
+# Core parameters
+use_fej: false # if first-estimate Jacobians should be used for feature parameters
+max_slam_features: 25
+
+relative_config_imu: "kalibr_imu_chain.yaml"
+relative_config_imucam: "kalibr_imucam_chain_no_dist.yaml"
+
+##################################################
+# IMU kinematic parameters
+jacobian_method: "continuous"
+discritization_method: "taylor_series"
+gravity_mag: 9.81
+use_preintegration_group_jacobians: false
+average_meas: True
+
+# State direction parameters
+lie_direction: "left"
+state_representation: "SE23"
+
+sigma_gps: 0.01
+sigma_feature_meas_3d: 1.0
+enable_viz: True
+
+##################################################
+# Optimization parameters
+max_solver_time_in_seconds: 0.08
+max_num_iterations: 10
+minimizer_progress_to_stdout: false
+imu_window_size: 5
+compute_covariance: true
+compute_problem_jacobian: false
+trust_region_type: "DOGLEG"
+robust_loss_type: "L2"
+
+##################################################
+# Simulation parameters
+# End simulation time
+t_end: 20.0 # seconds
+noise_active: True
+num_pts: 50
+sim_seed_perturb: 0
+sim_seed_state_init: 0
+sim_seed_measurements: 0
+sim_distance_threshold: 1.1
+sim_freq_imu: 400
+sim_freq_meas: 10
+sim_min_feature_gen_dist: 5.0
+sim_max_feature_gen_dist: 7.0
+sim_init_gyro_bias: [0.01, 0.02, 0.03]
+sim_init_accel_bias: [-0.03, -0.02, 0.02]
+
+# Config parameters for feature generation
+max_sensing_range_slam: 5.0
+num_slam_features: 25
+
+# Initialization parameters
+# IMU initialization
+sim_do_imu_perturbation: false # Perturb initial IMU state estimates
+sigma_init_att: 0.5
+sigma_init_vel: 5.0
+sigma_init_bg: 0.03
+sigma_init_ba: 0.03

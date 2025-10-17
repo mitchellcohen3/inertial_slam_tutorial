@@ -1,8 +1,8 @@
 #pragma once
 
+#include "lie/LieDirection.h"
 #include <Eigen/Dense>
 #include <cmath>
-#include "lie/LieDirection.h"
 
 namespace ceres_nav {
 

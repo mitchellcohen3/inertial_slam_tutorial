@@ -67,11 +67,11 @@ public:
     return Clone;
   }
 
-  Eigen::VectorXd ominus(const std::shared_ptr<Type> &other_base) const override {
+  Eigen::VectorXd
+  ominus(const std::shared_ptr<Type> &other_base) const override {
     std::shared_ptr<Vec> other = std::dynamic_pointer_cast<Vec>(other_base);
     return _value - other->value();
   }
-
 };
 
 } // namespace ov_type

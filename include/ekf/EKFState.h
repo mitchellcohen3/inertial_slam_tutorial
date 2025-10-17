@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types/ImuEKFState.h"
 #include "types/ExtendedPoseEKFState.h"
+#include "types/ImuEKFState.h"
 #include "types/Type.h"
 
 /**
@@ -20,10 +20,8 @@ public:
   std::unordered_map<size_t, std::shared_ptr<ov_type::Vec>> slam_features_;
 
 protected:
-
   friend class EKFStateHelper;
 
   Eigen::MatrixXd _Cov;
   std::vector<std::shared_ptr<ov_type::Type>> _variables;
-
 };

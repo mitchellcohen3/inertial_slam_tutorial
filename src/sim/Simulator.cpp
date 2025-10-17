@@ -235,7 +235,7 @@ void VinsSimulator::generateGroundtruthSlamFeatures() {
       LOG(INFO) << "Number of features to generate at time " << timestamp
                 << ": " << params.num_slam_features - num_measurements;
       size_t num_feat_to_generate = params.num_slam_features - num_measurements;
-      for (size_t i = 0; i < num_feat_to_generate; i++){
+      for (size_t i = 0; i < num_feat_to_generate; i++) {
         Eigen::Vector3d r_pw_a;
         r_pw_a.x() = gen_x(gen_state_init);
         r_pw_a.y() = gen_y(gen_state_init);

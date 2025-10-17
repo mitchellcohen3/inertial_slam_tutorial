@@ -32,15 +32,16 @@ public:
   // Update function
   void update(const Eigen::VectorXd &delta_xi) override {
     if (delta_xi.rows() != _size) {
-      LOG(ERROR) << "Error: Incorrect size passed to ImuEKFState update. Expected "
-                 << _size << " but got " << delta_xi.rows() << std::endl;
+      LOG(ERROR)
+          << "Error: Incorrect size passed to ImuEKFState update. Expected "
+          << _size << " but got " << delta_xi.rows() << std::endl;
       return;
     }
 
     // Update each subvariable
     pose_->update(delta_xi.segment(0, 9));
     gyro_bias->update(delta_xi.segment(9, 3));
-    accel_bias->update(delta_xi.segment(12, 3));    
+    accel_bias->update(delta_xi.segment(12, 3));
 
     // Now, set the full state value
     Eigen::Matrix<double, 21, 1> newX;
@@ -52,11 +53,12 @@ public:
 
   LieDirection getDirection() const { return pose_->getDirection(); }
 
-  void set_value(const Eigen::MatrixXd &new_value) override  {
+  void set_value(const Eigen::MatrixXd &new_value) override {
     if (new_value.rows() != 21) {
-        LOG(ERROR) << "Error: Incorrect size passed to ImuEKFState set_value. Expected 21 but got "
-                     << new_value.rows() << std::endl;
-        return;
+      LOG(ERROR) << "Error: Incorrect size passed to ImuEKFState set_value. "
+                    "Expected 21 but got "
+                 << new_value.rows() << std::endl;
+      return;
     }
 
     pose_->set_value(new_value.block<15, 1>(0, 0));

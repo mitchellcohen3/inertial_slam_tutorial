@@ -447,7 +447,7 @@ bool EKFStateHelper::initialize(
   if (std::find(state->_variables.begin(), state->_variables.end(),
                 new_variable) != state->_variables.end()) {
     LOG(ERROR) << "EKFEKFStateHelper::initialize() - Called to initialize a "
-                  "variable that is already in the state!\n"; 
+                  "variable that is already in the state!\n";
     std::exit(EXIT_FAILURE);
   }
 
@@ -460,11 +460,11 @@ bool EKFStateHelper::initialize(
     for (int c = 0; c < R.cols(); c++) {
       if (r == c && R(0, 0) != R(r, c)) {
         LOG(ERROR) << "EKFEKFStateHelper::initialize() - Your noise is not "
-                     "isotropic!\n";
+                      "isotropic!\n";
         std::exit(EXIT_FAILURE);
       } else if (r != c && R(r, c) != 0.0) {
         LOG(ERROR) << "EKFEKFStateHelper::initialize() - Your noise is not "
-                     "isotropic!\n";
+                      "isotropic!\n";
         std::exit(EXIT_FAILURE);
       }
     }
@@ -568,13 +568,14 @@ void EKFStateHelper::initialize_invertible(
     for (int c = 0; c < R.cols(); c++) {
       if (r == c && R(0, 0) != R(r, c)) {
         LOG(ERROR) << "EKFEKFStateHelper::initialize_invertible() - "
-                     "Your noise is not isotropic!\n";
+                      "Your noise is not isotropic!\n";
         std::exit(EXIT_FAILURE);
       } else if (r != c && R(r, c) != 0.0) {
         LOG(ERROR) << "EKFStateHelper::initialize_invertible() - Your noise "
-                     "is not diagonal!\n";
+                      "is not diagonal!\n";
         LOG(ERROR) << "EKFStateHelper::initialize_invertible() - Found a "
-                     "value of " << R(r, c) << " at row " << r << " and column " << c << "\n";
+                      "value of "
+                   << R(r, c) << " at row " << r << " and column " << c << "\n";
         std::exit(EXIT_FAILURE);
       }
     }
@@ -658,7 +659,8 @@ void EKFStateHelper::initialize_invertible(
 //                                    Eigen::Matrix<double, 3, 1> last_w) {
 
 //   // We can't insert a clone that occured at the same timestamp!
-//   if (state->_clones_IMU.find(state->_timestamp) != state->_clones_IMU.end()) {
+//   if (state->_clones_IMU.find(state->_timestamp) != state->_clones_IMU.end())
+//   {
 //     LOG()
 //     std::exit(EXIT_FAILURE);
 //   }
@@ -669,8 +671,8 @@ void EKFStateHelper::initialize_invertible(
 //       EKFStateHelper::clone(state, state->_imu->pose());
 
 //   // Cast to a JPL pose type, check if valid
-//   std::shared_ptr<PoseJPL> pose = std::dynamic_pointer_cast<PoseJPL>(posetemp);
-//   if (pose == nullptr) {
+//   std::shared_ptr<PoseJPL> pose =
+//   std::dynamic_pointer_cast<PoseJPL>(posetemp); if (pose == nullptr) {
 //     PRINT_ERROR(RED "INVALID OBJECT RETURNED FROM EKFStateHelper CLONE, "
 //                     "EXITING!#!@#!@#\n" RESET);
 //     std::exit(EXIT_FAILURE);
@@ -680,7 +682,8 @@ void EKFStateHelper::initialize_invertible(
 //   state->_clones_IMU[state->_timestamp] = pose;
 
 //   // If we are doing time calibration, then our clones are a function of the
-//   // time offset Logic is based on Mingyang Li and Anastasios I. Mourikis paper:
+//   // time offset Logic is based on Mingyang Li and Anastasios I. Mourikis
+//   paper:
 //   // http://journals.sagepub.com/doi/pdf/10.1177/0278364913515286
 //   if (state->_options.do_calib_camera_timeoffset) {
 //     // Jacobian to augment by
@@ -688,8 +691,8 @@ void EKFStateHelper::initialize_invertible(
 //     dnc_dt.block(0, 0, 3, 1) = last_w;
 //     dnc_dt.block(3, 0, 3, 1) = state->_imu->vel();
 //     // Augment covariance with time offset Jacobian
-//     // TODO: replace this with a call to the EKFPropagate function instead....
-//     state->_Cov.block(0, pose->id(), state->_Cov.rows(), 6) +=
+//     // TODO: replace this with a call to the EKFPropagate function
+//     instead.... state->_Cov.block(0, pose->id(), state->_Cov.rows(), 6) +=
 //         state->_Cov.block(0, state->_calib_dt_CAMtoIMU->id(),
 //                           state->_Cov.rows(), 1) *
 //         dnc_dt.transpose();
