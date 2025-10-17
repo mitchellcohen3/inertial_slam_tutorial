@@ -7,6 +7,7 @@
 #include "utils/Utility.h"
 
 #include <glog/logging.h>
+#include <unordered_set>
 
 EKFSlamEstimator::EKFSlamEstimator(const EstimatorConfig &config_)
     : config_(config_) {
@@ -64,9 +65,8 @@ void EKFSlamEstimator::inputRelativeFeatureMeasurements(
       Eigen::Matrix3d pos_jac;
       Eigen::Matrix3d landmark_jac;
 
-      computeMeasurementModelJacobians(
-          C, r, r_pw_a, att_jac, pos_jac, landmark_jac,
-          config_.lie_direction);
+      computeMeasurementModelJacobians(C, r, r_pw_a, att_jac, pos_jac,
+                                       landmark_jac, config_.lie_direction);
 
       Hx.block<3, 3>(0, 0) = att_jac;
       Hx.block<3, 3>(0, 6) = pos_jac;
@@ -86,10 +86,13 @@ void EKFSlamEstimator::inputRelativeFeatureMeasurements(
   }
 
   // Perform EKF update with all measurements of features at this timestamp
-  // performEKFUpdate(relative_feat_meas, stamp);
+  performEKFUpdate(relative_feat_meas, stamp);
 
   // Marginalize out features we no longer need
-  // marginalizeOldFeatures(stamp);
+  marginalizeOldFeatures(stamp, relative_feat_meas);
+
+  LOG(INFO) << "Number of features in state: "
+            << state_->slam_features_.size();
 
   // Clean feature manager and IMU propagator
   imu_propagator_->cleanOldIMUData(stamp - 0.2);
@@ -97,38 +100,34 @@ void EKFSlamEstimator::inputRelativeFeatureMeasurements(
   last_imu_time_ = stamp;
 }
 
-// void EKFSlamEstimator::marginalizeOldFeatures(double stamp) {
-//   // Check if there are any features that need to be marginaized
-//   // std::vector<size_t> old_feature_ids;
+void EKFSlamEstimator::marginalizeOldFeatures(
+    double stamp, const std::vector<RelativeFeatureMessage> &current_meas) {
+  // Create a set of feature IDs from current measurements
+  std::unordered_set<size_t> current_feature_ids;
+  for (auto const &meas : current_meas) {
+    current_feature_ids.insert(meas.feature_id);
+  }
 
-//   // Marginalize each old feature
-//   for (auto const &feat : old_features) {
-//     if (state_->slam_features_.find(feat->feature_id) ==
-//         state_->slam_features_.end()) {
-//       LOG(INFO) << "Feature " << feat->feature_id
-//                 << " not in state, skipping marginalization.";
-//       continue;
-//     }
+  // Identify features to marginalize - that is, features that are in the state
+  // but that are not in the current measurements
+  std::vector<size_t> lost_feature_ids;
+  for (auto const &feat_pair : state_->slam_features_) {
+    size_t feat_id = feat_pair.first;
+    if (current_feature_ids.find(feat_id) == current_feature_ids.end()) {
+      lost_feature_ids.push_back(feat_id);
+    }
+  }
 
-//     std::shared_ptr<ov_type::Vec> feature =
-//         state_->slam_features_.at(feat->feature_id);
-//     EKFStateHelper::marginalize(state_, feature);
+  // Marginalize each lost feature
+  for (size_t feature_id : lost_feature_ids) {
+    std::shared_ptr<ov_type::Vec> feature =
+        state_->slam_features_.at(feature_id);
+    EKFStateHelper::marginalize(state_, feature);
 
-//     // Remove from state
-//     state_->slam_features_.erase(feat->feature_id);
-
-//     // If we're using FEJ, also remove from fej landmarks
-//     if (config->use_fej) {
-//       if (fej_landmarks_.find(feat->feature_id) != fej_landmarks_.end()) {
-//         fej_landmarks_.erase(feat->feature_id);
-//       }
-//       else {
-//         LOG(WARNING) << "FEJ landmark for feature ID " << feat->feature_id
-//                      << " not found during marginalization.";
-//       }
-//     }
-//   }
-// }
+    // Remove from state
+    state_->slam_features_.erase(feature_id);
+  }
+}
 
 void EKFSlamEstimator::performEKFUpdate(
     const std::vector<RelativeFeatureMessage> &message_vec, double stamp) {
@@ -176,10 +175,9 @@ void EKFSlamEstimator::performEKFUpdate(
       }
       r_pw_a_jac = fej_landmarks_.at(message.feature_id);
     }
+    computeMeasurementModelJacobians(C, r, r_pw_a_jac, att_jac, pos_jac,
+                                     landmark_jac, config_.lie_direction);
 
-    // RelativeLandmarkJacobianHelper::computeJacobians(
-    //     C, r, r_pw_a_jac, att_jac, pos_jac, landmark_jac, config->state_rep,
-    //     config->direction);
     Hx.block<3, 3>(0, 0) = att_jac;
     Hx.block<3, 3>(0, 6) = pos_jac;
     Hx.block<3, 3>(0, 15) = landmark_jac;
@@ -259,9 +257,7 @@ void EKFSlamEstimator::initializeIMUState(
   LOG(INFO) << "IMU state size: " << state_->size();
 }
 
-double EKFSlamEstimator::getEstimateTime() const {
-  return state_->timestamp_;
-}
+double EKFSlamEstimator::getEstimateTime() const { return state_->timestamp_; }
 
 std::shared_ptr<ImuEKFState> EKFSlamEstimator::getLatestIMUState() const {
   return state_->imu_state_;
@@ -281,10 +277,12 @@ std::vector<Eigen::Vector3d> EKFSlamEstimator::getEstimatedMap() const {
 }
 
 void computeMeasurementModelJacobians(const Eigen::Matrix3d &C_ab,
-                      const Eigen::Vector3d &r_zw_a,
-                      const Eigen::Vector3d &r_pw_a, Eigen::Matrix3d &att_jac,
-                      Eigen::Matrix3d &pos_jac, Eigen::Matrix3d &feat_jac,
-                      LieDirection direction) {
+                                      const Eigen::Vector3d &r_zw_a,
+                                      const Eigen::Vector3d &r_pw_a,
+                                      Eigen::Matrix3d &att_jac,
+                                      Eigen::Matrix3d &pos_jac,
+                                      Eigen::Matrix3d &feat_jac,
+                                      LieDirection direction) {
   feat_jac = C_ab.transpose();
 
   Eigen::Vector3d y_check = C_ab.transpose() * (r_pw_a - r_zw_a);

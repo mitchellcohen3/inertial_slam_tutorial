@@ -59,8 +59,7 @@ if __name__ == "__main__":
     cov_file = os.path.join(save_dir, "cov_est.txt")
     gt_file = os.path.join(save_dir, "state_gt.txt")
     feature_map_file = os.path.join(save_dir, "feature_map.txt")
-    # traj_path = os.path.join(cur_dir, "trajectories/euroc_mav/MH_01_easy.txt")
-    traj_path = os.path.join(cur_dir, "trajectories/sim/flat_circle.txt")
+    traj_path = os.path.join(cur_dir, "trajectories/euroc_mav/MH_01_easy.txt")
 
     config_dict = {
         "traj_path": traj_path,
@@ -73,5 +72,5 @@ if __name__ == "__main__":
     run_ekf_slam_example(executable_path, config_dict)
 
     # Evaluate and plot results
-    evaluate_ekf_slam_example(gt_file, est_file, cov_file)
+    evaluate_ekf_slam_example(gt_file, est_file, cov_file, feature_map_file)
     plt.show()

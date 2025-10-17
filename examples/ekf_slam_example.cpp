@@ -55,7 +55,6 @@ int main(int argc, const char **argv) {
   std::string state_est_path = args["state_est_path"].as<std::string>();
   std::string cov_est_path = args["cov_est_path"].as<std::string>();
   std::string feature_map_path = args["feature_map_path"].as<std::string>();
-
   LOG(INFO) << "Using trajectory path: " << traj_path;
 
   // Create output files
@@ -76,13 +75,18 @@ int main(int argc, const char **argv) {
       std::make_shared<Simulator>(config, traj_path);
   LOG(INFO) << "Simulation initialized.";
 
+  // Save the landmarks
+  std::vector<Eigen::Vector3d> gt_landmarks = sim->getSlamFeatures();
+  for (auto const &lm : gt_landmarks) {
+    writeDataToFile(feature_map_path, lm, true);
+  }
+  
   // Create the estimator
   EstimatorConfig est_config;
   std::shared_ptr<EKFSlamEstimator> estimator =
       std::make_shared<EKFSlamEstimator>(est_config);
 
   // Main run loop
-  LOG(INFO) << "Starting main simulation loop...";
   double dt = 1.0 / config.sim_freq_imu;
   double next_imu_time = sim->currentTimestamp() + dt;
   double end_time = sim->currentTimestamp() + config.t_end;
@@ -99,8 +103,9 @@ int main(int argc, const char **argv) {
   estimator->initializeIMUState(init_imu_state.timestamp, nav_state,
                                 init_imu_state.gyro_bias,
                                 init_imu_state.accel_bias, init_cov);
-  LOG(INFO) << "Initialized EKF-SLAM estimator.";
 
+
+  LOG(INFO) << "Starting main simulation loop...";
   double buffer_timefeat = -1;
   std::vector<RelativeFeatureMessage> buffer_rel_feat;
   while (sim->ok()) {

@@ -30,7 +30,7 @@ public:
   ImuNoises imu_noises;
 
   // Simulator parameters
-  bool noise_active = false;
+  bool noise_active = true;
 
   // Sensor frequencies
   int sim_freq_imu = 400; // Hz
@@ -65,8 +65,8 @@ public:
 
   double gravity_mag = 9.81; // [m/s^2]
 
-  double max_sensing_range_slam = 20.0; // [m]
-  int num_slam_features = 5;  // Number of SLAM features to generate
+  double max_sensing_range_slam = 3; // [m]
+  int num_slam_features = 20;  // Number of SLAM features to generate
 
   double t_end = 200.0; // [s] Simulation end time
 };

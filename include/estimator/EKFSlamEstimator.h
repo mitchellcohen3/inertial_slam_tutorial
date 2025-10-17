@@ -53,7 +53,7 @@ protected:
   void performEKFUpdate(const std::vector<RelativeFeatureMessage> &meas,
                         double stamp);
 
-  void marginalizeOldFeatures(double stamp);
+  void marginalizeOldFeatures(double stamp, const std::vector<RelativeFeatureMessage> &current_meas);
 
   // The main configuration parameters for the estimator
   EstimatorConfig config_;

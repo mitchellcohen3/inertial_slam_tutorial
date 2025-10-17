@@ -57,25 +57,25 @@ def minus_SE23(Y: np.ndarray, X: np.ndarray, lie_direction: str) -> np.ndarray:
         return SE23.Log(SE23.inverse(X) @ Y)
 
 
-def evaluate_ekf_slam_example(gt_file: str, est_file: str, cov_file: str):
+def evaluate_ekf_slam_example(
+    gt_file: str,
+    est_file: str,
+    cov_file: str,
+    feature_map_file: str,
+):
     gt_states = load_imu_states_from_asl(gt_file)
     est_states = load_imu_states_from_asl(est_file)
     covs, stamps = load_covariances_from_file(cov_file, dof=15)
 
+    landmarks = np.loadtxt(feature_map_file, delimiter=" ")
+     
     logging.info(f"Loaded {len(gt_states)} ground truth states from {gt_file}")
     logging.info(f"Loaded {len(est_states)} estimated states from {est_file}")
     logging.info(f"Loaded {len(covs)} covariance matrices from {cov_file}")
+    logging.info(f"Loaded {landmarks.shape[0]} landmarks from {feature_map_file}")
 
     # ensure that the lengths match
     assert len(gt_states) == len(est_states) == len(covs) == len(stamps)
-
-    # Plot the groundtruth states
-    fig, ax = plot_poses(gt_states, label="groundtruth", step=None)
-    plot_poses(est_states, label="estimated", step=None, ax=ax)
-    ax.set_xlabel("x (m)")
-    ax.set_ylabel("y (m)")
-    ax.set_zlabel("z (m)")
-    ax.set_title("EKF SLAM State Estimation")
 
     # Compute the errors and 3-sigma bounds
     full_nees: np.ndarray = np.zeros(len(gt_states))
@@ -129,6 +129,25 @@ def evaluate_ekf_slam_example(gt_file: str, est_file: str, cov_file: str):
     three_sigma = np.array(three_sigma)
     stamps = np.array(stamps)
     plot_three_sigma(stamps, delta_xi, three_sigma)
+
+    # Plot the trajectories
+    fig, ax = plot_poses(gt_states, label="Groundtruth", step=None)
+    plot_poses(est_states, label="Estimate", step=None, ax=ax)
+    ax.set_xlabel("x (m)")
+    ax.set_ylabel("y (m)")
+    ax.set_zlabel("z (m)")
+    ax.set_title("EKF SLAM State Estimation")
+    ax.legend() 
+
+    # Plot the landmarks
+    ax.scatter(
+        landmarks[:, 0],
+        landmarks[:, 1],
+        landmarks[:, 2],
+        c="green",
+        marker="o"
+    )
+    fig.tight_layout()
 
 
 def plot_three_sigma(

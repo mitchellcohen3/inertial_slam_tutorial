@@ -18,13 +18,13 @@ public:
   }
 
   // Gyroscope whiten noise
-  double sigma_gyro = 0.01;
+  double sigma_gyro = 1.69e-4;
   // Gyroscope random walk
-  double sigma_gyro_bias = 0.01;
+  double sigma_gyro_bias = 1.93e-5;
   // Accelerometer white noise
-  double sigma_accel = 0.0001;
+  double sigma_accel = 2.00e-3;
   // Accelerometer random walk
-  double sigma_accel_bias = 0.00001;
+  double sigma_accel_bias = 3.00e-3;
 
   Eigen::Matrix<double, 12, 12> Q_ct;
 
