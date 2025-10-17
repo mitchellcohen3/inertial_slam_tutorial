@@ -1,6 +1,6 @@
 #include "ImuPropagator.h"
-#include "lie/SE23.h"
-#include "lie/SO3.h"
+#include "lieutils/SE23.h"
+#include "lieutils/SO3.h"
 
 #include "utils/Utils.h"
 #include "utils/colors.h"

@@ -4,7 +4,7 @@
 
 #include "Type.h"
 #include "Vec.h"
-#include "lie/LieDirection.h"
+#include "lieutils/LieDirection.h"
 
 namespace slam_states {
 

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "lie/LieDirection.h"
+#include "lieutils/LieDirection.h"
 #include <Eigen/Dense>
 #include <cmath>
-
-namespace ceres_nav {
 
 class SE23 {
 public:
@@ -41,5 +39,3 @@ public:
                                            const Eigen::Matrix<double, 5, 5> &X,
                                            LieDirection direction);
 };
-
-} // namespace ceres_nav

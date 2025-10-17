@@ -29,12 +29,31 @@ list(
     src/ekf/EKFState.cpp
     src/ekf/EKFStateHelper.cpp
     src/sim/BsplineSE3.cpp
+    src/utils/FileAccess.cpp
+    src/sim/Simulator.cpp
+
+    src/lieutils/SO3.cpp
+    src/lieutils/SE3.cpp
+    src/lieutils/SE23.cpp
 )
 
 # Declare the static library
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${PROJECT_NAME} STATIC ${lib_sources})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+# Include directories
+target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Link libraries
+target_link_libraries(${PROJECT_NAME}
+    Eigen3::Eigen
+    ${CERES_LIBRARIES}
+    ${Boost_LIBRARIES}
+)
 
 # Link libraries
 add_subdirectory(examples)

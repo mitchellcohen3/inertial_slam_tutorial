@@ -2,12 +2,10 @@
 
 #include <glog/logging.h>
 
-#include "lie/SE23.h"
-#include "lie/SO3.h"
+#include "lieutils/SE23.h"
+#include "lieutils/SO3.h"
 
 #include "Type.h"
-
-using namespace ceres_nav;
 
 namespace slam_states {
 class ExtendedPoseEKFState : public ov_type::Type {
