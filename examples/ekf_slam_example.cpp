@@ -128,11 +128,14 @@ int main(int argc, const char **argv) {
         msg.timestamp = time_feat;
         msg.feature_id = feat.first;
         msg.meas = feat.second;
-        msg.covariance =
-            Eigen::Matrix3d::Identity() * 0.01; // Example covariance
-        msg.covariance = Eigen::Matrix3d::Identity() *
-                         config.sigma_feature_meas_3d *
-                         config.sigma_feature_meas_3d;
+
+        if (!config.noise_active) {
+          msg.covariance = 1e-5 * Eigen::Matrix3d::Identity();
+        } else {
+          msg.covariance = Eigen::Matrix3d::Identity() *
+                           config.sigma_feature_meas_3d *
+                           config.sigma_feature_meas_3d;
+        }
         relative_feat_meas.push_back(msg);
       }
 

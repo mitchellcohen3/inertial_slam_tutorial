@@ -9,7 +9,16 @@
 class SimConfig {
 
 public:
-  SimConfig() {}
+  SimConfig() {
+    if (!noise_active) {
+      imu_noises.sigma_gyro = 0.0;
+      imu_noises.sigma_accel = 0.0;
+      imu_noises.sigma_gyro_bias = 0.0;
+      imu_noises.sigma_accel_bias = 0.0;
+
+      sigma_feature_meas_3d = 0.0;
+    }
+  }
 
   bool load();
   void print() const;
@@ -20,13 +29,8 @@ public:
   // IMU noises
   ImuNoises imu_noises;
 
-  // Measurement noises
-  double sigma_gps = 0.1; // [m]
-  double sigma_pix = 1.0; // [pixels]
-  double sigma_feature_meas = 0.1;
-
   // Simulator parameters
-  bool noise_active = true;
+  bool noise_active = false;
 
   // Sensor frequencies
   int sim_freq_imu = 400; // Hz
@@ -60,7 +64,6 @@ public:
   double sigma_init_ba = 0.001;
 
   double gravity_mag = 9.81; // [m/s^2]
-
 
   double max_sensing_range_slam = 20.0; // [m]
   int num_slam_features = 5;  // Number of SLAM features to generate

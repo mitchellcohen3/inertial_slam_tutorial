@@ -156,14 +156,6 @@ Simulator::Simulator(SimConfig &params_, const std::string &imu_traj_path)
 }
 
 void Simulator::generateGroundtruthSlamFeatures() {
-  // Get the min and max x, y, and z values for the trajectory
-  double min_x = std::numeric_limits<double>::max();
-  double min_y = std::numeric_limits<double>::max();
-  double min_z = std::numeric_limits<double>::max();
-  double max_x = std::numeric_limits<double>::lowest();
-  double max_y = std::numeric_limits<double>::lowest();
-  double max_z = std::numeric_limits<double>::lowest();
-
   double timestamp = spline->get_start_time();
   double dt = 1.0;
 
