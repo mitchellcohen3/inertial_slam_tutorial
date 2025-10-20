@@ -9,22 +9,13 @@
 class SimConfig {
 
 public:
-  SimConfig() {
-    if (!noise_active) {
-      imu_noises.sigma_gyro = 0.0;
-      imu_noises.sigma_accel = 0.0;
-      imu_noises.sigma_gyro_bias = 0.0;
-      imu_noises.sigma_accel_bias = 0.0;
+  SimConfig() {}
 
-      sigma_feature_meas_3d = 0.0;
-    }
-  }
-
-  bool load();
+  bool load(const std::string &config_file);
   void print() const;
 
   // 3D SLAM feature config
-  double sigma_feature_meas_3d = 1.0; // [m]
+  double sigma_feature_meas_3d = 0.1; // [m]
 
   // IMU noises
   ImuNoises imu_noises;

@@ -16,12 +16,14 @@ find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time program_options) # for timing
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLOG REQUIRED libglog)
+find_package(yaml-cpp REQUIRED)
 
 include_directories(
     include
     ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
     ${GLOG_INCLUDE_DIRS}
+    ${YAML_CPP_INCLUDE_DIRS}
 )
 
 list(
@@ -30,6 +32,7 @@ list(
     src/ekf/EKFStateHelper.cpp
     src/sim/BsplineSE3.cpp
     src/sim/Simulator.cpp
+    src/sim/SimConfig.cpp
 
     src/lieutils/SO3.cpp
     src/lieutils/SE3.cpp
@@ -58,6 +61,7 @@ target_link_libraries(${PROJECT_NAME}
     Eigen3::Eigen
     ${CERES_LIBRARIES}
     ${Boost_LIBRARIES}
+    yaml-cpp
 )
 
 # Link libraries

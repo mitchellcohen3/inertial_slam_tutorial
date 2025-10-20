@@ -56,6 +56,8 @@ def minus_SE23(Y: np.ndarray, X: np.ndarray, lie_direction: str) -> np.ndarray:
     elif lie_direction == "right":
         return SE23.Log(SE23.inverse(X) @ Y)
 
+def plot_imu_errors():
+    pass
 
 def evaluate_ekf_slam_example(
     gt_file: str,
@@ -128,6 +130,9 @@ def evaluate_ekf_slam_example(
     delta_xi = np.array(delta_xi)
     three_sigma = np.array(three_sigma)
     stamps = np.array(stamps)
+
+    # Shift the timestamps to start at zero
+    stamps = stamps - stamps[0]
     plot_three_sigma(stamps, delta_xi, three_sigma)
 
     # Plot the trajectories
