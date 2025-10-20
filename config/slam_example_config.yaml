@@ -5,7 +5,7 @@ max_sensing_range_slam: 5.0
 
 use_fej: false
 
-noise_active: false
+noise_active: true
 
 # Sensor Parameters
 sigma_feature_meas_3d: 0.1
