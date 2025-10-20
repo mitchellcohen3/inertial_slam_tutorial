@@ -56,8 +56,41 @@ def minus_SE23(Y: np.ndarray, X: np.ndarray, lie_direction: str) -> np.ndarray:
     elif lie_direction == "right":
         return SE23.Log(SE23.inverse(X) @ Y)
 
-def plot_imu_errors():
-    pass
+def plot_imu_errors(stamps: np.ndarray, errors: np.ndarray, three_sigma: np.ndarray):
+    """Plots the IMU errors with 3-sigma bounds."""
+    if (errors.shape[1] != 15) or (three_sigma.shape[1] != 15):
+        raise ValueError("Errors and three_sigma must have 15 dimensions for IMU states.")
+
+    titles = [
+        "Attitude Errors",
+        "Velocity Errors",
+        "Position Errors",
+        "Gyro Bias Errors",
+        "Accel Bias Errors",
+    ]
+
+    slices = [
+        slice(0, 3),
+        slice(3, 6),
+        slice(6, 9),
+        slice(9, 12),
+        slice(12, 15),
+    ]
+
+    for s, title in zip(slices, titles):
+        fig, ax = plot_three_sigma(
+            stamps,
+            errors[:, s],
+            three_sigma[:, s],
+            enable_sigma_bounds=True,
+            error_alpha=0.9,
+        )
+        ax[0].set_title(title)
+        ax[-1].set_xlabel("Time (s)")
+        ax[0].set_ylabel("x")
+        ax[1].set_ylabel("y")
+        ax[2].set_ylabel("z")
+        fig.tight_layout()
 
 def evaluate_ekf_slam_example(
     gt_file: str,
@@ -133,7 +166,8 @@ def evaluate_ekf_slam_example(
 
     # Shift the timestamps to start at zero
     stamps = stamps - stamps[0]
-    plot_three_sigma(stamps, delta_xi, three_sigma)
+    plot_imu_errors(stamps, delta_xi, three_sigma)
+    # plot_three_sigma(stamps, delta_xi, three_sigma)
 
     # Plot the trajectories
     fig, ax = plot_poses(gt_states, label="Groundtruth", step=None)
