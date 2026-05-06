@@ -259,6 +259,17 @@ void EKFSlamEstimator::initializeIMUState(
 
 double EKFSlamEstimator::getEstimateTime() const { return state_->timestamp_; }
 
+NavStateEstimate EKFSlamEstimator::getLatestState() const {
+  NavStateEstimate est;
+  est.timestamp = state_->timestamp_;
+  est.attitude = state_->imu_state_->attitude();
+  est.velocity = state_->imu_state_->velocity();
+  est.position = state_->imu_state_->position();
+  est.gyro_bias = state_->imu_state_->gyroBias();
+  est.accel_bias = state_->imu_state_->accelBias();
+  return est;
+}
+
 std::shared_ptr<ImuEKFState> EKFSlamEstimator::getLatestIMUState() const {
   return state_->imu_state_;
 }

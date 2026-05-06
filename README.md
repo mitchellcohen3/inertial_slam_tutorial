@@ -1,24 +1,44 @@
 # Inertial SLAM Tutorial
-This repo contains a basic inertial SLAM example using the implementation of the EKF from OpenVINS. This code is meant for tutorial purposes, to demonstrate how to set up an EKF for a basic SLAM problem where a robot moves in 3D space, collecting noisy inertial data and measurements to unknown landmarks in the body frame. 
+This repo is intended for tutorial purposes and showcases a basic inertial SLAM example, where a robot moves in 3D space collecting gyroscope and accelerometer measurements, as well as measurements to unknown landmarks in the body frame. This repo contains implementations of two commonly used methods: the Extended Kalman Filter, and iSAM2, part of the GTSAM library. The implementation of the EKF is based on the OpenVINS library, and the solution using iSAM2 utilizes IMU preintegration. 
+
+This repo contains the C++ library code for the EKF and iSAM2 implementations, as well as a ROS package that allows for visualization of the estimated trajectory and landmarks in RViz. 
 
 ## Dependencies
-This code has the following dependencies
+This code has the following dependencies and has been tested on Ubuntu 20.04:
 - **CMake >= 3.10**
 - **Eigen3 (>= 3.3)**
 - **Boost**
 - **glog** 
 - **yaml-cpp**
 
-## Installation
-This code has been tested on Ubuntu 20.04 and 22.04. The required dependencies
-can be installed using
+The required dependencies can be installed using
 ```bash
 sudo apt update
 sudo apt install cmake libeigen3-dev libboost-all-dev libgoogle-glog-dev libyaml-cpp-dev
 ```
 
-To build, clone the repo and run CMake
+Additionally, the iSAM2 implementation requires GTSAM (tested with GTSAM 4.2), which can be installed from source by following the instructions [here](https://github.com/borglab/gtsam).
+
+## Building with ROS
+To build with ROS, clone the repo into a catkin ws and build the ROS package using
 ```bash
+mkdir -p catkin_ws/src
+cd catkin_ws/src
+git clone git@github.com:mitchellcohen3/inertial_slam_tutorial.git
+cd ..
+catkin build
+source devel/setup.bash
+```
+
+The example can then be run using
+```bash
+roslaunch inertial_slam_tutorial ekf_slam_example.launch
+```
+
+## Building without ROS
+To build without ros, clone the repo and build the library using CMake as follows:
+```bash
+git clone git@github.com:mitchellcohen3/inertial_slam_tutorial.git
 cd inertial_slam_tutorial
 mkdir build && cd build
 cmake ..

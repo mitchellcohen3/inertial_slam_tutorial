@@ -3,10 +3,10 @@
 #include <iostream>
 
 #include "estimator/EKFSlamEstimator.h"
+#include "estimator/ISAMSlamEstimator.h"
+#include "estimator/SlamEstimatorBase.h"
 #include "sim/SimConfig.h"
 #include "sim/Simulator.h"
-
-#include "types/ImuEKFState.h"
 
 #include "lieutils/LieDirection.h"
 #include "utils/FileAccess.h"
@@ -31,7 +31,8 @@ po::variables_map handle_args(int argc, const char *argv[]) {
   ("state_gt_path", po::value<std::string>()->default_value("state_gt.txt"), "Path to save groundtruth states")
   ("state_est_path", po::value<std::string>()->default_value("state_est.txt"), "Path to save estimated states")
   ("cov_est_path", po::value<std::string>()->default_value("cov_est.txt"), "Path to save estimated covariances")
-  ("feature_map_path", po::value<std::string>()->default_value("feature_map.txt"), "Path to save estimated feature map");
+  ("feature_map_path", po::value<std::string>()->default_value("feature_map.txt"), "Path to save estimated feature map")
+  ("estimator", po::value<std::string>()->default_value("ekf"), "Estimator to use: 'ekf' or 'isam2'");
 
   // clang-format on
   po::variables_map var_map;
@@ -93,9 +94,24 @@ int main(int argc, const char **argv) {
   }
   
   // Create the estimator
-  EstimatorConfig est_config;
-  std::shared_ptr<EKFSlamEstimator> estimator =
-      std::make_shared<EKFSlamEstimator>(est_config);
+  std::string estimator_type = args["estimator"].as<std::string>();
+  LOG(INFO) << "Using estimator: " << estimator_type;
+
+  std::shared_ptr<SlamEstimatorBase> estimator;
+  if (estimator_type == "ekf") {
+    EstimatorConfig est_config;
+    estimator = std::make_shared<EKFSlamEstimator>(est_config);
+  } else if (estimator_type == "isam2") {
+    KinematicsConfig kin_config;
+    kin_config.gravity_mag = config.gravity_mag;
+    kin_config.gravity = Eigen::Vector3d(0, 0, -config.gravity_mag);
+    kin_config.imu_noises = config.imu_noises;
+    estimator = std::make_shared<ISAMSlamEstimator>(kin_config);
+  } else {
+    LOG(ERROR) << "Unknown estimator type: " << estimator_type
+               << ". Use 'ekf' or 'isam2'.";
+    return 1;
+  }
 
   // Main run loop
   double dt = 1.0 / config.sim_freq_imu;
@@ -175,12 +191,10 @@ int main(int argc, const char **argv) {
       }
 
       // Retrieve the estimated state
-      std::shared_ptr<ImuEKFState> est_imu_state =
-          estimator->getLatestIMUState();
+      NavStateEstimate est = estimator->getLatestState();
       Eigen::Matrix<double, 17, 1> est_state_vec =
-          toAslFormat(est_imu_state->attitude(), est_imu_state->velocity(),
-                      est_imu_state->position(), est_imu_state->gyroBias(),
-                      est_imu_state->accelBias(), estimator_timestamp);
+          toAslFormat(est.attitude, est.velocity, est.position,
+                      est.gyro_bias, est.accel_bias, est.timestamp);
       writeDataToFile(state_est_path, est_state_vec, true);
 
       Eigen::Matrix<double, 15, 15> est_cov =

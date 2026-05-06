@@ -1,0 +1,15 @@
+<launch>
+  <arg name="config_path"/>
+  <arg name="traj_path"/>
+  <arg name="estimator"      default="ekf"/>
+  <arg name="rviz"           default="true"/>
+
+  <node pkg="inertial_slam_ros" type="inertial_slam_node" name="inertial_slam_node" output="screen">
+    <param name="config_path"      value="$(arg config_path)"/>
+    <param name="trajectory_path"  value="$(arg traj_path)"/>
+    <param name="estimator"        value="$(arg estimator)"/>
+  </node>
+
+  <!-- <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz"
+        args="-d $(find inertial_slam_ros)/ros/inertial_slam.rviz"/> -->
+</launch>

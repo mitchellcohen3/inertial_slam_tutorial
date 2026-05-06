@@ -1,6 +1,7 @@
 #pragma once
 
 #include "estimator/ImuKinematicsConfig.h"
+#include "estimator/SlamEstimatorBase.h"
 #include "utils/SensorData.h"
 #include "lieutils/SO3.h"
 
@@ -28,24 +29,26 @@ class EKFState;
  * Contains the logic for propagating the IMU state, and processing
  * 3D SLAM feature measurements to update the state.
  */
-class EKFSlamEstimator {
+class EKFSlamEstimator : public SlamEstimatorBase {
 public:
   EKFSlamEstimator(const EstimatorConfig &config_);
 
-  void inputIMU(ImuMessage &imu_data);
+  void inputIMU(ImuMessage &imu_data) override;
   void inputRelativeFeatureMeasurements(
-      std::vector<RelativeFeatureMessage> &relative_feat_meas, double stamp);
+      std::vector<RelativeFeatureMessage> &relative_feat_meas,
+      double stamp) override;
 
   void initializeIMUState(double stamp,
                           const Eigen::Matrix<double, 5, 5> &nav_state,
                           const Eigen::Vector3d &gyro_bias,
                           const Eigen::Vector3d &accel_bias,
-                          const Eigen::Matrix<double, 15, 15> &init_imu_cov);
+                          const Eigen::Matrix<double, 15, 15> &init_imu_cov) override;
 
+  NavStateEstimate getLatestState() const override;
   std::shared_ptr<ImuEKFState> getLatestIMUState() const;
-  Eigen::Matrix<double, 15, 15> getLatestIMUCovariance() const;
-  std::vector<Eigen::Vector3d> getEstimatedMap() const;
-  double getEstimateTime() const;
+  Eigen::Matrix<double, 15, 15> getLatestIMUCovariance() const override;
+  std::vector<Eigen::Vector3d> getEstimatedMap() const override;
+  double getEstimateTime() const override;
 
 protected:
   void propagateIMUStateToStamp(double stamp);

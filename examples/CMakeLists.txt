@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
-project(slam_example)
+project(inertial_slam_example)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(sources
-    ekf_slam_example.cpp
+    inertial_slam_example.cpp
 )
 
 # Create executable
-add_executable(ekf_slam_example ${sources})
-target_include_directories(ekf_slam_example PRIVATE include)
+add_executable(inertial_slam_example ${sources})
+target_include_directories(inertial_slam_example PRIVATE include)
 
 # Link the example to the main library and dependancies
-target_link_libraries(ekf_slam_example ekf_slam ${Boost_LIBRARIES} ${GLOG_LIBRARIES})
+target_link_libraries(inertial_slam_example inertial_slam ${Boost_LIBRARIES} ${GLOG_LIBRARIES})

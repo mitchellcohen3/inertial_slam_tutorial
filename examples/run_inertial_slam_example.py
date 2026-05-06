@@ -22,6 +22,7 @@ plt.rc("grid", linestyle="--")
 plt.rc("text", usetex=True)
 colors = sns.color_palette("deep")
 
+
 def run_ekf_slam_example(executable_path: str, config_dict: typing.Dict):
     if not os.path.exists(executable_path):
         raise FileNotFoundError(f"Executable not found at {executable_path}")
@@ -29,7 +30,6 @@ def run_ekf_slam_example(executable_path: str, config_dict: typing.Dict):
 
     try:
         cmd = [executable_path]
-
         args = [
             "--config_path",
             config_dict["sim_config_path"],
@@ -43,6 +43,8 @@ def run_ekf_slam_example(executable_path: str, config_dict: typing.Dict):
             config_dict["cov_est_path"],
             "--feature_map_path",
             config_dict["feature_map_path"],
+            "--estimator",
+            config_dict["estimator"],
         ]
         cmd.extend(args)
         result = subprocess.run(cmd, check=True)
@@ -71,6 +73,7 @@ if __name__ == "__main__":
         "state_est_path": est_file,
         "cov_est_path": cov_file,
         "feature_map_path": feature_map_file,
+        "estimator": "isam2",
     }
 
     run_ekf_slam_example(executable_path, config_dict)
